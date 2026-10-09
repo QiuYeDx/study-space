@@ -4,6 +4,7 @@
 // 排序：默认按名称自然排序，数字前缀（01-、02-、10-）决定阅读顺序，笔记和子文件夹混排，前缀不显示；
 // 也可切换为按时间（最新 / 最早）。时间取笔记 front matter 里的 date，没有就用文件的修改时间。
 // 任意文件夹可放一个 _module.json 描述标题、简介、图标、排序；以 . 或 _ 开头的文件和文件夹不会出现。
+// 两种运行方式：本地用静态服务器的目录列表实时发现笔记；build.py 打包的 dist 版读取 manifest.js 清单，可部署到 OSS 等无目录列表的静态托管。
 
 const ROOT = new URL('../', location.href);
 const NOTE_RE = /\.(md|markdown)$/i;
@@ -68,10 +69,23 @@ async function listDir(rel, depth = 0) {
   }
   return node;
 }
+// 构建版（build.py 生成的 dist）没有目录列表，改为读取打包时生成的清单；结构与 listDir 的结果一致
+const builtTimes = new Map(); // rel -> 打包时记录的文件修改时间
+function fromManifest(raw) {
+  const node = { dirs: [], notes: [], items: [], hasMeta: false, rawMeta: raw.meta || null };
+  for (const d of raw.dirs || []) node.dirs.push({ kind: 'dir', name: d.name, rel: d.rel, ...fromManifest(d) });
+  for (const n of raw.notes || []) {
+    const base = n.name.replace(NOTE_RE, '');
+    node.notes.push({ kind: 'note', rel: n.rel, name: base, label: stripPrefix(base), order: prefixOrder(base) });
+    if (n.modified) builtTimes.set(n.rel, new Date(n.modified));
+  }
+  return node;
+}
+
 // 文件夹的标题、简介、图标、排序：_module.json 优先，其次取文件夹名（序号前缀决定排序）
 async function loadMeta(dir) {
-  let meta = {};
-  if (dir.hasMeta) {
+  let meta = dir.rawMeta || {};
+  if (!dir.rawMeta && dir.hasMeta) {
     try {
       const res = await fetch(new URL(enc(dir.rel) + '/_module.json', ROOT), { cache: 'no-cache' });
       if (res.ok) meta = await res.json();
@@ -150,7 +164,8 @@ async function loadNote(rel, fresh) {
   }
   const m = text.match(/^#\s+(.+)$/m);
   const lm = res.headers.get('Last-Modified');
-  const modified = lm ? new Date(lm) : null;
+  // 构建版里服务器返回的是上传时间，用打包时记录的文件修改时间
+  const modified = builtTimes.get(rel) || (lm ? new Date(lm) : null);
   const shown = date || modified;
   const entry = {
     text, date, modified,
@@ -574,7 +589,8 @@ addEventListener('hashchange', route);
 
 // ---------- 启动 ----------
 (async function init() {
-  tree = await listDir('');
+  const manifest = window.STUDY_SPACE_MANIFEST;
+  tree = manifest && manifest.tree ? fromManifest(manifest.tree) : await listDir('');
   await prepare(tree);
   modules = tree.dirs;
   renderTree();
