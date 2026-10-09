@@ -425,6 +425,42 @@ body.has-toc .content { margin-right: var(--toc-w); }
 .card-excerpt { font-size: 13.5px; line-height: 1.65; color: var(--muted-fg); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .card-meta { margin-top: auto; font-size: 12px; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
 
+/* 排序开关：侧栏和模块页共用 */
+.sort-switch {
+  display: inline-flex; gap: 2px; padding: 3px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--muted);
+}
+.sort-switch button {
+  border: 0; background: transparent; color: var(--muted-fg);
+  font: inherit; font-size: 12.5px; line-height: 1; padding: 6px 10px; border-radius: 7px;
+  cursor: pointer; transition: background-color .18s, color .18s, box-shadow .18s;
+}
+.sort-switch button:hover { color: var(--fg); }
+.sort-switch button[aria-pressed="true"] { background: var(--card); color: var(--fg); font-weight: 600; box-shadow: 0 1px 3px var(--shadow-lg); }
+.sort-switch button:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.tree > .sort-switch { display: flex; margin: 0 0 12px; }
+.tree > .sort-switch button { flex: 1; }
+.list-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: -16px 0 20px; font-size: 13px; color: var(--muted-fg); }
+
+/* 模块页：子文件夹分组 */
+.module-list { display: flex; flex-direction: column; gap: 16px; }
+.group { border-top: 1px solid var(--border); padding-top: 8px; }
+.group summary {
+  display: flex; align-items: center; gap: 9px; padding: 8px 4px;
+  cursor: pointer; list-style: none; user-select: none; border-radius: 8px;
+}
+.group summary::-webkit-details-marker { display: none; }
+.group summary svg { flex: none; opacity: .8; }
+.group summary .chev { opacity: .6; transition: transform .25s var(--ease-out); }
+.group[open] > summary .chev { transform: rotate(90deg); }
+.group summary:hover .group-title { color: var(--primary); }
+.group-title { font-size: 18px; font-weight: 650; line-height: 1.4; transition: color .18s; }
+.group summary em { font-style: normal; font-size: 12.5px; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
+.group-desc { margin: 0 0 4px 27px; color: var(--muted-fg); font-size: 14px; }
+.group-body { display: flex; flex-direction: column; gap: 16px; padding: 8px 0 8px; }
+.group .group { margin-left: 14px; padding-left: 14px; border-top: 0; border-left: 1px solid var(--border); padding-top: 0; }
+.group .group .group-title { font-size: 16px; }
+
 /* ---------- 右侧目录 ---------- */
 .toc {
   position: fixed; z-index: 15;
